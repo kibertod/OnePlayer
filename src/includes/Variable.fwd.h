@@ -3,6 +3,6 @@
 namespace OnePlayer
 {
 
-    class PlayerElement;
+    class VariableManager;
 
 }

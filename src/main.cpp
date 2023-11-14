@@ -1,63 +1,88 @@
+#include <sys/ioctl.h>
 #include <chrono>
 #include <cstdio>
-#include <sys/ioctl.h>
-#include <thread>
-#include <unistd.h>
 #include <curses.h>
+#include <thread>
 #include <iostream>
-#include <ncurses.h>
 
-#include "PlayerElement.h"
-#include "ScreenManager.h"
-#include "Ueberzug.h"
+#include "Variable.h"
+#include "Widget.h"
 
 int main(int argc, char** argv)
 {
     using namespace OnePlayer;
     setlocale(LC_ALL, "");
+
+    VariableManager variableManager;
+
     initscr();
+    curs_set(0);
 
-    Layout layout;
+    Box box(Vec2(20, 20), Vec2(0, 0), Vec2(0, 0), false, true, variableManager);
+    std::shared_ptr<Text> title = box.AddChild<Text>(
+        Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(0, 0), true, true, variableManager,
+        "${polycat}${polycat}Title\n${polycat}${polycat}${title}\n${polycat}$"
+        "{polycat}котёнок");
+    title->XAlign = Text::ContentAlign::Center;
+    title->YAlign = Text::ContentAlign::Center;
 
-    MetaData metaData("");
-    PlayPauseButton playPause(
-        metaData, ContentAlign::Center, ContentAlign::Center);
-    NextButton playNext(metaData, ContentAlign::Start, ContentAlign::Center);
-    PrevButton playPrev(metaData, ContentAlign::End, ContentAlign::Center);
-    Artist artist(metaData, ContentAlign::Center, ContentAlign::Center);
-    Album album(metaData, ContentAlign::Center, ContentAlign::Center);
-    Title title(metaData, ContentAlign::Center, ContentAlign::Center);
-    TimeLine timeLine(metaData, ContentAlign::Center, ContentAlign::Center);
-    Time time(metaData, ContentAlign::Center, ContentAlign::Center);
-    Cover cover(metaData, ContentAlign::End, ContentAlign::End);
+    std::shared_ptr<Box> vBox = box.AddChild<Box>(
+        Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(0, 0), false, true, variableManager);
+    vBox->Orientation = Box::Orientation::Vertical;
 
-    layout.emplace_back(title, true, XYPair(1, 0.1f), XYPair(0, 0));
-    layout.emplace_back(artist, true, XYPair(0.5f, 0.1f), XYPair(0, 0.1f));
-    layout.emplace_back(album, true, XYPair(0.5f, 0.1f), XYPair(0.5f, 0.1f));
-    layout.emplace_back(
-        playPause, false, XYPair(0.34f, 0.2f), XYPair(0.33f, 0.8f));
-    layout.emplace_back(playPrev, false, XYPair(0.33f, 0.2f), XYPair(0, 0.8f));
-    layout.emplace_back(
-        playNext, false, XYPair(0.33f, 0.2f), XYPair(0.67f, 0.8f));
-    layout.emplace_back(timeLine, true, XYPair(0.75f, 0.1f), XYPair(0, 0.7f));
-    layout.emplace_back(time, true, XYPair(0.25f, 0.1f), XYPair(0.75f, 0.7f));
-    layout.emplace_back(cover, true, XYPair(1, 0.5f), XYPair(0, 0.2f));
+    std::shared_ptr<Text> artist = vBox->AddChild<Text>(
+        Vec2(Size(100, Unit::Percent), Size(50, Unit::Percent)), Vec2(0, 0),
+        Vec2(0, 0), true, true, variableManager,
+        "${polycat}${polycat}Artist\n${polycat}${polycat}${artist}\n${"
+        "polycat}${polycat}котёнок");
+    artist->XAlign = Text::ContentAlign::Center;
+    artist->YAlign = Text::ContentAlign::Center;
 
-    Screen screen(std::move(layout));
+    std::shared_ptr<Text> album =
+        vBox->AddChild<Text>(Vec2(Size(100, Unit::Percent), 10), Vec2(0, 0),
+            Vec2(0, 0), true, true, variableManager,
+            "${polycat}${polycat}Album\n${polycat}${polycat}${album}\n${"
+            "polycat}$"
+            "{polycat}котёнок");
+    album->XAlign = Text::ContentAlign::Center;
+    album->YAlign = Text::ContentAlign::Center;
 
-    screen.DrawWindows();
+    variableManager.AddVariable(
+        "title", "playerctl metadata title", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable(
+        "artist", "playerctl metadata artist", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable(
+        "album", "playerctl metadata album", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("polycat", "polycat", Variable::Type::Stdin);
+
+    box.Orientation = Box::Orientation::Horizontal;
+
+    struct winsize termSize;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize);
+    box.UpdateSize(Vec2(0, 0), Vec2(termSize.ws_col, termSize.ws_row), true);
 
     while (true)
     {
         auto point = std::chrono::steady_clock::now();
-        point += std::chrono::milliseconds(250);
-        screen.Update();
-        screen.DrawWindows();
+        point += std::chrono::milliseconds(1000 / 60);
+
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize);
+
+        if (box.Size.x.value != termSize.ws_col ||
+            box.Size.y.value != termSize.ws_row)
+        {
+            box.UpdateSize(
+                Vec2(0, 0), Vec2(termSize.ws_col, termSize.ws_row), true);
+            box.Size = Vec2(termSize.ws_col, termSize.ws_row);
+        }
+
+        if (variableManager.HasUpdate())
+            box.UpdateVariables();
+
         std::this_thread::sleep_until(point);
     }
-    endwin();
-
-    getchar();
 
     return 0;
 

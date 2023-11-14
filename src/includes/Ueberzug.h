@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ScreenManager.h"
+#include "Widget.h"
 
 namespace OnePlayer::Ueberzug
 {
@@ -12,15 +12,14 @@ namespace OnePlayer::Ueberzug
     public:
         Ueberzug();
         ~Ueberzug();
-        void ChangeImage(
-            const std::string& url, const XYPair& pos, const XYPair& maxSize);
-        std::string CacheImage(const std::string& url);
+        void ChangeImage(const std::string& url, Vec2 pos, Vec2 maxSize);
 
     private:
         FILE* _daemonPipe;
         std::string _lastUrl;
-        XYPair _lastPos;
+        Vec2 _lastPos;
 
+        std::string CacheImage(const std::string& url);
         void SpawnDaemon();
         void SendData(const std::string& data);
     };

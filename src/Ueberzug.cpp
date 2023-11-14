@@ -1,16 +1,15 @@
 #include "Ueberzug.h"
 
-#include "ScreenManager.fwd.h"
-
-#include <algorithm>
 #include <curl/curl.h>
 #include <curl/easy.h>
 
 #include <csignal>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 #define IMAGE_PATH "/tmp/oneplayer-image-cache"
 
@@ -54,33 +53,35 @@ namespace OnePlayer::Ueberzug
         return IMAGE_PATH;
     };
 
-    void Ueberzug::ChangeImage(
-        const std::string& url, const XYPair& pos, const XYPair& maxSize)
+    void Ueberzug::ChangeImage(const std::string& url, Vec2 pos, Vec2 maxSize)
     {
-        if (_lastUrl == url && _lastPos == pos)
+        if ((_lastUrl == url && _lastPos == pos) || url == "")
             return;
 
-        std::string path = CacheImage(url);
+        std::stringstream deletionCommand;
+        deletionCommand << "\"action\":\"remove\",\"identifier\":\"cover\"}";
+        std::fprintf(_daemonPipe, "%s\n", deletionCommand.str().data());
+        fflush(_daemonPipe);
 
-        if (_lastUrl != "")
-        {
-            std::stringstream deletionCommand;
-            deletionCommand << "\"action\":\"remove\",\"identifier\":\""
-                            << _lastUrl << "\"}";
-            std::fprintf(_daemonPipe, "%s\n", deletionCommand.str().data());
-            fflush(_daemonPipe);
-        }
+        std::string path;
+        if (_lastUrl != url)
+            path = CacheImage(url);
+        else
+            path = IMAGE_PATH;
 
         std::stringstream additionCommand;
-
-        additionCommand << "{\"action\":\"add\",\"identifier\":\"" << url
-                        << "\", \"max_width\":" << maxSize.x
-                        << ", \"max_height\":" << maxSize.y << ",\"path\":\""
-                        << path << "\", \"x\":" << pos.x << ", \"y\":" << pos.y
-                        << "}";
+        additionCommand
+            << "{\"action\":\"add\",\"identifier\":\"cover\", \"max_width\":"
+            << maxSize.x.value << ", \"max_height\":" << maxSize.y.value
+            << ",\"path\":\"" << path << "\", \"x\":" << pos.x.value
+            << ", \"y\":" << pos.y.value << "}";
         std::fprintf(_daemonPipe, "%s\n", additionCommand.str().data());
         fflush(_daemonPipe);
 
+        std::ofstream log;
+        log.open("penis.lol", std::ios::app);
+        log << url << " и ещё короче \"" << _lastUrl << "\"" << std::endl
+            << std::endl;
         _lastUrl = url;
         _lastPos = pos;
     };
