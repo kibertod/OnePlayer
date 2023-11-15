@@ -119,13 +119,21 @@ namespace OnePlayer
                 {
                 case (Unit::Pixel):
                     childSpace.y.value = child->Size.y.value;
-                    childSpace.x.value =
-                        std::min(child->Size.x.value, space.x.value);
                     break;
 
                 case (Unit::Percent):
                     childSpace.y.value =
                         space.y.value * child->Size.y.value / 100;
+                    break;
+                }
+
+                switch (child->Size.x.unit)
+                {
+                case (Unit::Pixel):
+                    childSpace.x.value =
+                        std::min(child->Size.x.value, space.x.value);
+                    break;
+                case (Unit::Percent):
                     childSpace.x.value =
                         std::min(space.x.value * child->Size.x.value / 100,
                             space.x.value);
@@ -143,13 +151,21 @@ namespace OnePlayer
                 {
                 case (Unit::Pixel):
                     childSpace.x.value = child->Size.x.value;
-                    childSpace.y.value =
-                        std::min(child->Size.y.value, space.y.value);
                     break;
 
                 case (Unit::Percent):
                     childSpace.x.value =
                         space.x.value * child->Size.x.value / 100;
+                    break;
+                }
+                switch (child->Size.y.unit)
+                {
+                case (Unit::Pixel):
+                    childSpace.y.value =
+                        std::min(child->Size.y.value, space.y.value);
+                    break;
+
+                case (Unit::Percent):
                     childSpace.y.value =
                         std::min(space.y.value * child->Size.y.value / 100,
                             space.y.value);

@@ -37,9 +37,9 @@ int main(int argc, char** argv)
     title->XAlign = Text::ContentAlign::Start;
     title->YAlign = Text::ContentAlign::Start;
 
-    std::shared_ptr<Image> cover = hBox->AddChild<Image>(
-        Vec2(Size(25, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
-        Vec2(0, 0), false, true, variableManager, ueberzug, "cover");
+    std::shared_ptr<Image> cover =
+        hBox->AddChild<Image>(Vec2(Size(25, Unit::Percent), 6), Vec2(0, 0),
+            Vec2(0, 0), false, true, variableManager, ueberzug, "cover");
 
     std::shared_ptr<Box> vBox = box.AddChild<Box>(
         Vec2(Size(100, Unit::Percent), Size(25, Unit::Percent)), Vec2(0, 0),
