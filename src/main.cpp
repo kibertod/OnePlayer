@@ -19,45 +19,41 @@ int main(int argc, char** argv)
     curs_set(0);
 
     Box box(Vec2(20, 20), Vec2(0, 0), Vec2(0, 0), false, true, variableManager);
-    std::shared_ptr<Text> title = box.AddChild<Text>(
+    box.Orientation = Box::Orientation::Vertical;
+
+    std::shared_ptr<Box> hBox = box.AddChild<Box>(
+        Vec2(Size(100, Unit::Percent), Size(75, Unit::Percent)), Vec2(0, 0),
+        Vec2(0, 0), true, true, variableManager);
+
+    std::shared_ptr<Text> title = hBox->AddChild<Text>(
         Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
-        Vec2(0, 0), true, true, variableManager,
-        "${polycat}${polycat}Title\n${polycat}${polycat}${title}\n${polycat}$"
-        "{polycat}котёнок");
+        Vec2(0, 0), false, true, variableManager,
+        "| ${polycat} ${title} ${polycat} |\n| ${polycat} ${artist} "
+        "${polycat} |\n "
+        "| ${polycat} ${album} ${polycat} |");
     title->XAlign = Text::ContentAlign::Center;
     title->YAlign = Text::ContentAlign::Center;
 
     std::shared_ptr<Box> vBox = box.AddChild<Box>(
-        Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(Size(100, Unit::Percent), Size(25, Unit::Percent)), Vec2(0, 0),
         Vec2(0, 0), false, true, variableManager);
     vBox->Orientation = Box::Orientation::Vertical;
 
-    std::shared_ptr<Text> artist = vBox->AddChild<Text>(
-        Vec2(Size(100, Unit::Percent), Size(50, Unit::Percent)), Vec2(0, 0),
-        Vec2(0, 0), true, true, variableManager,
-        "${polycat}${polycat}Artist\n${polycat}${polycat}${artist}\n${"
-        "polycat}${polycat}котёнок");
-    artist->XAlign = Text::ContentAlign::Center;
-    artist->YAlign = Text::ContentAlign::Center;
-
-    std::shared_ptr<Text> album =
-        vBox->AddChild<Text>(Vec2(Size(100, Unit::Percent), 10), Vec2(0, 0),
-            Vec2(0, 0), true, true, variableManager,
-            "${polycat}${polycat}Album\n${polycat}${polycat}${album}\n${"
-            "polycat}$"
-            "{polycat}котёнок");
-    album->XAlign = Text::ContentAlign::Center;
-    album->YAlign = Text::ContentAlign::Center;
+    std::shared_ptr<Scale> album = vBox->AddChild<Scale>(
+        Vec2(Size(100, Unit::Percent), Size(2, Unit::Pixel)), Vec2(0, 0),
+        Vec2(0, 0), false, true, variableManager, "lol", "position");
+    album->Type = Scale::Type::Horizontal;
 
     variableManager.AddVariable(
         "title", "playerctl metadata title", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("position",
+        "python ~/.config/eww/scripts/mediaplayer.py get_time",
+        Variable::Type::Poll, 0.5);
     variableManager.AddVariable(
         "artist", "playerctl metadata artist", Variable::Type::Poll, 0.5);
     variableManager.AddVariable(
         "album", "playerctl metadata album", Variable::Type::Poll, 0.5);
     variableManager.AddVariable("polycat", "polycat", Variable::Type::Stdin);
-
-    box.Orientation = Box::Orientation::Horizontal;
 
     struct winsize termSize;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &termSize);

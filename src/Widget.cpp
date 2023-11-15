@@ -6,9 +6,11 @@
 #include <curses.h>
 #include <iostream>
 #include <locale>
+#include <stdexcept>
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include <vector>
 
 namespace OnePlayer
 {
@@ -233,7 +235,7 @@ namespace OnePlayer
         }
     }
 
-    void Text::Draw(Vec2 pos, Vec2 space)
+    void Text::Draw(Vec2 pos, Vec2 space, bool forceClear, Vec2 offset)
     {
         if (HasBorder)
         {
@@ -243,14 +245,15 @@ namespace OnePlayer
             space.y.value -= 2;
         }
 
-        for (int i = 0; i < static_cast<int>(space.y.value); i++)
-        {
-            for (int j = 0; j < static_cast<int>(space.x.value); j++)
-                mvwprintw(_ncursesWin, i + static_cast<int>(HasBorder),
-                    j + static_cast<int>(HasBorder), " ");
-        }
+        if (forceClear)
+            for (int i = 0; i < static_cast<int>(space.y.value); i++)
+            {
+                for (int j = 0; j < static_cast<int>(space.x.value); j++)
+                    mvwprintw(_ncursesWin, i + static_cast<int>(HasBorder),
+                        j + static_cast<int>(HasBorder), " ");
+            }
 
-        size_t yOffset = HasBorder;
+        size_t yOffset = HasBorder + offset.y.value;
 
         switch (YAlign)
         {
@@ -282,7 +285,7 @@ namespace OnePlayer
                        line.substr(endLiteral + 1, line.size() - 1);
             }
 
-            size_t xOffset = HasBorder;
+            size_t xOffset = HasBorder + offset.x.value;
 
             std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> m_cvt;
             switch (XAlign)
@@ -307,6 +310,137 @@ namespace OnePlayer
         }
         refresh();
         wrefresh(_ncursesWin);
+    }
+
+    void Text::Draw(Vec2 pos, Vec2 space)
+    {
+        Text::Draw(pos, space, true, Vec2());
+    }
+
+    void Scale::Draw(Vec2 pos, Vec2 space)
+    {
+        size_t value;
+
+        std::vector<std::string> initialContent = _content;
+
+        try
+        {
+            value = std::stoul(_variableManager.GetValue(ValueVar));
+        }
+        catch (std::exception&)
+        {
+            value = 0;
+        }
+
+        switch (Type)
+        {
+        case (Scale::Type::Horizontal):
+        {
+            _content = std::vector<std::string>(1);
+            std::stringstream stream;
+            for (size_t i = 0; i < space.x.value - HasBorder * 2; i++)
+            {
+                if (static_cast<float>(i) / space.x.value * 100 <= value)
+                    stream << "█";
+                else
+                    stream << "░";
+            }
+            _content.emplace_back(stream.str());
+            Text::Draw(pos, space);
+            _content = initialContent;
+            break;
+        }
+        case (Scale::Type::Vertical):
+        {
+            size_t maxValue = space.y.value - HasBorder * 2;
+            _content = std::vector<std::string>();
+            _content.reserve(maxValue);
+            for (int i = maxValue - 1; i >= 0; i--)
+            {
+                if (static_cast<float>(i) / maxValue * 100 <= value)
+                    _content.emplace_back("█");
+                else
+                    _content.emplace_back("░");
+            }
+            Text::Draw(pos, space);
+            _content = initialContent;
+            break;
+        }
+        case (Scale::Type::Circular):
+        {
+            if (HasBorder)
+            {
+                space.y.value -= 2;
+                space.x.value -= 2;
+                pos.y.value += 1;
+                pos.x.value += 1;
+            }
+
+            size_t maxValue = space.y.value * 2 + space.x.value * 2;
+            size_t firstSection = space.x.value / 2 + space.x.value % 2;
+            size_t secondSection = firstSection + space.y.value;
+            size_t thirdSection = secondSection + space.x.value;
+            size_t fourthSection = thirdSection + space.y.value;
+            size_t fifthSection = fourthSection + (space.x.value) / 2;
+
+            std::vector<std::u32string> u32Content;
+            u32Content.reserve(space.y.value);
+            for (size_t i = 0; i < space.y.value; i++)
+                u32Content.emplace_back(space.x.value, ' ');
+
+            for (size_t i = 0; i < maxValue; i++)
+            {
+                char32_t block;
+                if (static_cast<float>(i) / maxValue * 100 <= value)
+                    block = 9608;
+                else
+                    block = 9617;
+                (void)fifthSection;
+
+                if (i < firstSection)
+                    u32Content[0][(space.x.value) / 2 + i] = block;
+                else if (i < secondSection)
+                {
+                    u32Content[i - firstSection][space.x.value - 1] = block;
+                    u32Content[i - firstSection][space.x.value - 2] = block;
+                }
+                else if (i < thirdSection)
+                    u32Content[space.y.value - 1]
+                              [space.x.value - (i - secondSection)] = block;
+                else if (i < fourthSection)
+                {
+                    u32Content[space.y.value - (i - thirdSection) - 1][0] =
+                        block;
+                    u32Content[space.y.value - (i - thirdSection) - 1][1] =
+                        block;
+                }
+                else if (i < fifthSection)
+                    u32Content[0][i - fourthSection] = block;
+            }
+
+            _content = std::vector<std::string>();
+            _content.reserve(space.y.value - HasBorder * 2);
+            std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> m_cvt;
+            for (const auto& u32line : u32Content)
+                _content.emplace_back(m_cvt.to_bytes(u32line));
+
+            if (HasBorder)
+            {
+                space.y.value += 2;
+                space.x.value += 2;
+                pos.y.value -= 1;
+                pos.x.value -= 1;
+            }
+
+            Text::Draw(pos, space, true, Vec2());
+            _content = initialContent;
+
+            space.y.value -= 2;
+            space.x.value -= 4;
+            Text::Draw(pos, space, false, Vec2(2, 1));
+            break;
+        }
+        }
     }
 
 }

@@ -2,6 +2,7 @@
 
 #include "Variable.fwd.h"
 #include "Widget.fwd.h"
+#include "Ueberzug.fwd.h"
 #include <curses.h>
 #include <memory>
 #include <string>
@@ -131,14 +132,42 @@ namespace OnePlayer
 
     protected:
         void Draw(Vec2 pos, Vec2 space) override;
+        void Draw(Vec2 pos, Vec2 space, bool forceClear, Vec2 offset);
         std::string _clickAction;
         std::vector<std::string> _content;
     };
 
+    class Scale : public Text
+    {
+    public:
+        enum class Type
+        {
+            Horizontal,
+            Vertical,
+            Circular
+        };
+
+        Type Type;
+        std::string ValueVar;
+
+        Scale(Vec2 size, Vec2 startPadding, Vec2 endPadding, bool hasBorder,
+            bool visible, VariableManager& variableManager,
+            const std::string& content, const std::string valueVar) :
+            Text(size, startPadding, endPadding, hasBorder, visible,
+                variableManager, content),
+            Type(Type::Horizontal),
+            ValueVar(valueVar) {};
+
+    protected:
+        void Draw(Vec2 pos, Vec2 space) override;
+    };
+
     class Image : public Widget
+
     {
     public:
         void SetImage(const std::string src);
+        std::string ValueVar;
 
         Image(Vec2 size, Vec2 startPadding, Vec2 endPadding, bool hasBorder,
             bool visible, VariableManager& variableManager) :
