@@ -1,5 +1,6 @@
 #include "Widget.h"
 #include "Variable.h"
+#include "Ueberzug.h"
 #include <algorithm>
 #include <codecvt>
 #include <cstddef>
@@ -288,6 +289,12 @@ namespace OnePlayer
             size_t xOffset = HasBorder + offset.x.value;
 
             std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> m_cvt;
+
+            if (m_cvt.from_bytes(line).length() > space.x.value)
+                line = m_cvt.to_bytes(m_cvt.from_bytes(line).substr(
+                           0, space.x.value - 3)) +
+                       "...";
+
             switch (XAlign)
             {
             case (Text::ContentAlign::Start):
@@ -441,6 +448,50 @@ namespace OnePlayer
             break;
         }
         }
+    }
+
+    void Image::UpdateVariables()
+    {
+        std::string updatedSrc = _variableManager.GetValue(ValueVar);
+
+        if (updatedSrc == "-" || updatedSrc == _imgSrc)
+            return;
+
+        _ueberzug.RemoveImage(updatedSrc);
+        _imgSrc = updatedSrc;
+        Draw(_lastPos, _lastSpace);
+    }
+
+    void Image::UpdateSize(Vec2 pos, Vec2 space, bool forceRedraw)
+    {
+        if (pos == _lastPos && space == _lastSpace && !forceRedraw)
+            return;
+
+        _lastSpace = space;
+        _lastPos = pos;
+
+        wborder(_ncursesWin, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+        wclear(_ncursesWin);
+        delwin(_ncursesWin);
+
+        _ncursesWin =
+            newwin(space.y.value, space.x.value, pos.y.value, pos.x.value);
+        wresize(_ncursesWin, space.y.value, space.x.value);
+
+        if (HasBorder)
+            box(_ncursesWin, 0, 0);
+
+        refresh();
+        wrefresh(_ncursesWin);
+
+        Draw(pos, space);
+    }
+
+    void Image::HandleClick(Vec2 pos) { (void)pos; }
+
+    void Image::Draw(Vec2 pos, Vec2 space)
+    {
+        _ueberzug.AddImage(_imgSrc, pos, space);
     }
 
 }

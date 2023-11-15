@@ -166,17 +166,18 @@ namespace OnePlayer
 
     {
     public:
-        void SetImage(const std::string src);
         std::string ValueVar;
+        std::string ClickAction;
 
         Image(Vec2 size, Vec2 startPadding, Vec2 endPadding, bool hasBorder,
-            bool visible, VariableManager& variableManager) :
+            bool visible, VariableManager& variableManager, Ueberzug& ueberzug,
+            const std::string& valueVar) :
             Widget(size, startPadding, endPadding, hasBorder, visible,
                 variableManager),
-            _clickAction("") {};
+            ValueVar(valueVar),
+            _ueberzug(ueberzug),
+            _imgSrc("") {};
 
-        void SetContent(const std::string& content);
-        void SetClickAction(const std::string& action);
         void UpdateVariables() override;
         void UpdateSize(
             Vec2 pos, Vec2 space, bool forceRedraw = false) override;
@@ -184,8 +185,8 @@ namespace OnePlayer
 
     protected:
         void Draw(Vec2 pos, Vec2 space) override;
-        std::string _clickAction;
-        std::vector<std::string> _content;
+        Ueberzug& _ueberzug;
+        std::string _imgSrc;
     };
 
 }

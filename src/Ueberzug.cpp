@@ -1,4 +1,5 @@
 #include "Ueberzug.h"
+#include "Widget.h"
 
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -13,7 +14,7 @@
 
 #define IMAGE_PATH "/tmp/oneplayer-image-cache"
 
-namespace OnePlayer::Ueberzug
+namespace OnePlayer
 {
 
     void Ueberzug::SpawnDaemon()
@@ -21,12 +22,7 @@ namespace OnePlayer::Ueberzug
         _daemonPipe = popen("ueberzug layer -s", "w");
     }
 
-    Ueberzug::Ueberzug() :
-        _lastUrl(""),
-        _lastPos(0, 0)
-    {
-        SpawnDaemon();
-    }
+    Ueberzug::Ueberzug() { SpawnDaemon(); }
 
     Ueberzug::~Ueberzug() { pclose(_daemonPipe); }
 
@@ -53,37 +49,29 @@ namespace OnePlayer::Ueberzug
         return IMAGE_PATH;
     };
 
-    void Ueberzug::ChangeImage(const std::string& url, Vec2 pos, Vec2 maxSize)
+    void Ueberzug::AddImage(const std::string& url, Vec2 pos, Vec2 maxSize)
     {
-        if ((_lastUrl == url && _lastPos == pos) || url == "")
-            return;
-
-        std::stringstream deletionCommand;
-        deletionCommand << "\"action\":\"remove\",\"identifier\":\"cover\"}";
-        std::fprintf(_daemonPipe, "%s\n", deletionCommand.str().data());
-        fflush(_daemonPipe);
-
-        std::string path;
-        if (_lastUrl != url)
-            path = CacheImage(url);
-        else
-            path = IMAGE_PATH;
+        CacheImage(url);
 
         std::stringstream additionCommand;
-        additionCommand
-            << "{\"action\":\"add\",\"identifier\":\"cover\", \"max_width\":"
-            << maxSize.x.value << ", \"max_height\":" << maxSize.y.value
-            << ",\"path\":\"" << path << "\", \"x\":" << pos.x.value
-            << ", \"y\":" << pos.y.value << "}";
+        additionCommand << "{\"action\":\"add\",\"identifier\":\""
+                        << "lol"
+                        << "\", \"max_width\":" << maxSize.x.value
+                        << ", \"max_height\":" << maxSize.y.value
+                        << ",\"path\":\"" << IMAGE_PATH
+                        << "\", \"x\":" << pos.x.value
+                        << ", \"y\":" << pos.y.value << "}";
         std::fprintf(_daemonPipe, "%s\n", additionCommand.str().data());
         fflush(_daemonPipe);
-
-        std::ofstream log;
-        log.open("penis.lol", std::ios::app);
-        log << url << " и ещё короче \"" << _lastUrl << "\"" << std::endl
-            << std::endl;
-        _lastUrl = url;
-        _lastPos = pos;
     };
+
+    void Ueberzug::RemoveImage(const std::string& url)
+    {
+        std::stringstream deletionCommand;
+        deletionCommand << "\"action\":\"remove\",\"identifier\":\"" << url
+                        << "\"}";
+        std::fprintf(_daemonPipe, "%s\n", deletionCommand.str().data());
+        fflush(_daemonPipe);
+    }
 
 };

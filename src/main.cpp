@@ -5,6 +5,7 @@
 #include <thread>
 #include <iostream>
 
+#include "Ueberzug.h"
 #include "Variable.h"
 #include "Widget.h"
 
@@ -14,6 +15,7 @@ int main(int argc, char** argv)
     setlocale(LC_ALL, "");
 
     VariableManager variableManager;
+    Ueberzug ueberzug;
 
     initscr();
     curs_set(0);
@@ -21,18 +23,23 @@ int main(int argc, char** argv)
     Box box(Vec2(20, 20), Vec2(0, 0), Vec2(0, 0), false, true, variableManager);
     box.Orientation = Box::Orientation::Vertical;
 
-    std::shared_ptr<Box> hBox = box.AddChild<Box>(
-        Vec2(Size(100, Unit::Percent), Size(75, Unit::Percent)), Vec2(0, 0),
-        Vec2(0, 0), true, true, variableManager);
+    std::shared_ptr<Box> hBox =
+        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 6), Vec2(0, 0),
+            Vec2(0, 0), false, true, variableManager);
 
     std::shared_ptr<Text> title = hBox->AddChild<Text>(
-        Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(Size(75, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
         Vec2(0, 0), false, true, variableManager,
-        "| ${polycat} ${title} ${polycat} |\n| ${polycat} ${artist} "
-        "${polycat} |\n "
-        "| ${polycat} ${album} ${polycat} |");
-    title->XAlign = Text::ContentAlign::Center;
-    title->YAlign = Text::ContentAlign::Center;
+        "Title:   ${title}\n"
+        "Artist:  ${artist}\n"
+        "Album:   ${album}\n"
+        "Котёнок: ${polycat} =D");
+    title->XAlign = Text::ContentAlign::Start;
+    title->YAlign = Text::ContentAlign::Start;
+
+    std::shared_ptr<Image> cover = hBox->AddChild<Image>(
+        Vec2(Size(25, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(0, 0), false, true, variableManager, ueberzug, "cover");
 
     std::shared_ptr<Box> vBox = box.AddChild<Box>(
         Vec2(Size(100, Unit::Percent), Size(25, Unit::Percent)), Vec2(0, 0),
@@ -41,7 +48,7 @@ int main(int argc, char** argv)
 
     std::shared_ptr<Scale> album = vBox->AddChild<Scale>(
         Vec2(Size(100, Unit::Percent), Size(2, Unit::Pixel)), Vec2(0, 0),
-        Vec2(0, 0), false, true, variableManager, "lol", "position");
+        Vec2(0, 0), false, true, variableManager, "", "position");
     album->Type = Scale::Type::Horizontal;
 
     variableManager.AddVariable(
@@ -49,10 +56,12 @@ int main(int argc, char** argv)
     variableManager.AddVariable("position",
         "python ~/.config/eww/scripts/mediaplayer.py get_time",
         Variable::Type::Poll, 0.5);
-    variableManager.AddVariable(
-        "artist", "playerctl metadata artist", Variable::Type::Poll, 0.5);
-    variableManager.AddVariable(
-        "album", "playerctl metadata album", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("artist", "playerctl -p ncspot metadata artist",
+        Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("album", "playerctl -p ncspot metadata album",
+        Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("cover",
+        "playerctl -p ncspot metadata mpris:artUrl", Variable::Type::Poll, 0.5);
     variableManager.AddVariable("polycat", "polycat", Variable::Type::Stdin);
 
     struct winsize termSize;

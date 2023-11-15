@@ -2,9 +2,10 @@
 
 #include <string>
 
-#include "Widget.h"
+#include "Ueberzug.fwd.h"
+#include "Widget.fwd.h"
 
-namespace OnePlayer::Ueberzug
+namespace OnePlayer
 {
 
     class Ueberzug
@@ -12,12 +13,11 @@ namespace OnePlayer::Ueberzug
     public:
         Ueberzug();
         ~Ueberzug();
-        void ChangeImage(const std::string& url, Vec2 pos, Vec2 maxSize);
+        void AddImage(const std::string& url, Vec2 pos, Vec2 maxSize);
+        void RemoveImage(const std::string& url);
 
     private:
         FILE* _daemonPipe;
-        std::string _lastUrl;
-        Vec2 _lastPos;
 
         std::string CacheImage(const std::string& url);
         void SpawnDaemon();
