@@ -166,8 +166,17 @@ namespace OnePlayer
 
     {
     public:
+        enum class ContentAlign
+        {
+            Start,
+            Center,
+            End,
+        };
+
         std::string ValueVar;
         std::string ClickAction;
+        ContentAlign XAlign;
+        ContentAlign YAlign;
 
         Image(Vec2 size, Vec2 startPadding, Vec2 endPadding, bool hasBorder,
             bool visible, VariableManager& variableManager, Ueberzug& ueberzug,
@@ -175,6 +184,9 @@ namespace OnePlayer
             Widget(size, startPadding, endPadding, hasBorder, visible,
                 variableManager),
             ValueVar(valueVar),
+            ClickAction(""),
+            XAlign(ContentAlign::Start),
+            YAlign(ContentAlign::Start),
             _ueberzug(ueberzug),
             _imgSrc("") {};
 

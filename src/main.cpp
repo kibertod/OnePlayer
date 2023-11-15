@@ -24,11 +24,11 @@ int main(int argc, char** argv)
     box.Orientation = Box::Orientation::Vertical;
 
     std::shared_ptr<Box> hBox =
-        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 6), Vec2(0, 0),
+        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 5), Vec2(0, 0),
             Vec2(0, 0), false, true, variableManager);
 
     std::shared_ptr<Text> title = hBox->AddChild<Text>(
-        Vec2(Size(75, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
+        Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
         Vec2(0, 0), false, true, variableManager,
         "Title:   ${title}\n"
         "Artist:  ${artist}\n"
@@ -38,8 +38,10 @@ int main(int argc, char** argv)
     title->YAlign = Text::ContentAlign::Start;
 
     std::shared_ptr<Image> cover =
-        hBox->AddChild<Image>(Vec2(Size(25, Unit::Percent), 6), Vec2(0, 0),
-            Vec2(0, 0), false, true, variableManager, ueberzug, "cover");
+        hBox->AddChild<Image>(Vec2(10'000, 5), Vec2(0, 0), Vec2(0, 0), false,
+            true, variableManager, ueberzug, "cover");
+    cover->XAlign = Image::ContentAlign::End;
+    cover->YAlign = Image::ContentAlign::Start;
 
     std::shared_ptr<Box> vBox = box.AddChild<Box>(
         Vec2(Size(100, Unit::Percent), Size(25, Unit::Percent)), Vec2(0, 0),
@@ -51,8 +53,8 @@ int main(int argc, char** argv)
         Vec2(0, 0), false, true, variableManager, "", "position");
     album->Type = Scale::Type::Horizontal;
 
-    variableManager.AddVariable(
-        "title", "playerctl metadata title", Variable::Type::Poll, 0.5);
+    variableManager.AddVariable("title", "playerctl -p ncspot metadata title",
+        Variable::Type::Poll, 0.5);
     variableManager.AddVariable("position",
         "python ~/.config/eww/scripts/mediaplayer.py get_time",
         Variable::Type::Poll, 0.5);

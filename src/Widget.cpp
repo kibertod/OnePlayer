@@ -2,9 +2,11 @@
 #include "Variable.h"
 #include "Ueberzug.h"
 #include <algorithm>
+#include <cmath>
 #include <codecvt>
 #include <cstddef>
 #include <curses.h>
+#include <functional>
 #include <iostream>
 #include <locale>
 #include <stdexcept>
@@ -507,7 +509,50 @@ namespace OnePlayer
 
     void Image::Draw(Vec2 pos, Vec2 space)
     {
-        _ueberzug.AddImage(_imgSrc, pos, space);
+        if (HasBorder)
+        {
+            pos.x.value += 1;
+            pos.y.value += 1;
+            space.x.value -= 2;
+            space.y.value -= 2;
+        }
+
+        std::string imagePath;
+        if (_imgSrc.starts_with("https://") || _imgSrc.starts_with("http://"))
+        {
+            imagePath = _ueberzug.CacheImage(_imgSrc);
+        }
+        else
+            imagePath = _imgSrc;
+
+        if (space.x.value > space.y.value * 2)
+            switch (XAlign)
+            {
+            case Image::ContentAlign::Start:
+                break;
+            case Image::ContentAlign::Center:
+                pos.x.value += (space.x.value - space.y.value * 2) / 2;
+                break;
+            case Image::ContentAlign::End:
+                pos.x.value += space.x.value - space.y.value * 2;
+                break;
+            }
+        else
+            switch (YAlign)
+            {
+            case Image::ContentAlign::Start:
+                break;
+            case Image::ContentAlign::Center:
+                pos.y.value +=
+                    (space.y.value - static_cast<float>(space.x.value) / 2) / 2;
+                break;
+            case Image::ContentAlign::End:
+                pos.y.value +=
+                    space.y.value - static_cast<float>(space.x.value) / 2;
+                break;
+            }
+
+        _ueberzug.AddImage(imagePath, pos, space);
     }
 
 }

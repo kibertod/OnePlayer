@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <arpa/inet.h>
 
 #define IMAGE_PATH "/tmp/oneplayer-image-cache"
 
@@ -49,26 +50,22 @@ namespace OnePlayer
         return IMAGE_PATH;
     };
 
-    void Ueberzug::AddImage(const std::string& url, Vec2 pos, Vec2 maxSize)
+    void Ueberzug::AddImage(const std::string& path, Vec2 pos, Vec2 maxSize)
     {
-        CacheImage(url);
-
         std::stringstream additionCommand;
-        additionCommand << "{\"action\":\"add\",\"identifier\":\""
-                        << "lol"
+        additionCommand << "{\"action\":\"add\",\"identifier\":\"" << path
                         << "\", \"max_width\":" << maxSize.x.value
                         << ", \"max_height\":" << maxSize.y.value
-                        << ",\"path\":\"" << IMAGE_PATH
-                        << "\", \"x\":" << pos.x.value
+                        << ",\"path\":\"" << path << "\", \"x\":" << pos.x.value
                         << ", \"y\":" << pos.y.value << "}";
         std::fprintf(_daemonPipe, "%s\n", additionCommand.str().data());
         fflush(_daemonPipe);
     };
 
-    void Ueberzug::RemoveImage(const std::string& url)
+    void Ueberzug::RemoveImage(const std::string& path)
     {
         std::stringstream deletionCommand;
-        deletionCommand << "\"action\":\"remove\",\"identifier\":\"" << url
+        deletionCommand << "\"action\":\"remove\",\"identifier\":\"" << path
                         << "\"}";
         std::fprintf(_daemonPipe, "%s\n", deletionCommand.str().data());
         fflush(_daemonPipe);
