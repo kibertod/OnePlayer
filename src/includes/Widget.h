@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace OnePlayer
@@ -46,6 +47,7 @@ namespace OnePlayer
         Vec2 Size;
         Vec2 StartPadding;
         Vec2 EndPadding;
+        std::string ClickAction;
 
         Widget();
         Widget(Vec2 size, Vec2 startPadding, Vec2 endPadding, bool hasBorder,
@@ -55,7 +57,7 @@ namespace OnePlayer
         virtual void UpdateVariables() = 0;
         virtual void UpdateSize(
             Vec2 pos, Vec2 space, bool forceRedraw = false) = 0;
-        virtual void HandleClick(Vec2 pos) = 0;
+        virtual void HandleClick(Vec2 pos);
 
     protected:
         virtual void Draw(Vec2 pos, Vec2 space) = 0;
@@ -79,7 +81,8 @@ namespace OnePlayer
         template<class T, class... Args>
         std::shared_ptr<T> AddChild(Args&&... args)
         {
-            _children.push_back(std::make_shared<T>(args...));
+            _children.push_back(
+                std::make_shared<T>(std::forward<Args>(args)...));
             return std::dynamic_pointer_cast<T>(_children.back());
         }
 
@@ -117,23 +120,19 @@ namespace OnePlayer
             bool visible, VariableManager& variableManager,
             const std::string& content) :
             Widget(size, startPadding, endPadding, hasBorder, visible,
-                variableManager),
-            _clickAction("")
+                variableManager)
         {
             SetContent(content);
         };
 
         void SetContent(const std::string& content);
-        void SetClickAction(const std::string& action);
         void UpdateVariables() override;
         void UpdateSize(
             Vec2 pos, Vec2 space, bool forceRedraw = false) override;
-        void HandleClick(Vec2 pos) override;
 
     protected:
         void Draw(Vec2 pos, Vec2 space) override;
         void Draw(Vec2 pos, Vec2 space, bool forceClear, Vec2 offset);
-        std::string _clickAction;
         std::vector<std::string> _content;
     };
 
@@ -158,6 +157,8 @@ namespace OnePlayer
             Type(Type::Horizontal),
             ValueVar(valueVar) {};
 
+        void HandleClick(Vec2 pos) override { (void)pos; };
+
     protected:
         void Draw(Vec2 pos, Vec2 space) override;
     };
@@ -174,7 +175,6 @@ namespace OnePlayer
         };
 
         std::string ValueVar;
-        std::string ClickAction;
         ContentAlign XAlign;
         ContentAlign YAlign;
 
@@ -184,7 +184,6 @@ namespace OnePlayer
             Widget(size, startPadding, endPadding, hasBorder, visible,
                 variableManager),
             ValueVar(valueVar),
-            ClickAction(""),
             XAlign(ContentAlign::Start),
             YAlign(ContentAlign::Start),
             _ueberzug(ueberzug),
@@ -193,7 +192,6 @@ namespace OnePlayer
         void UpdateVariables() override;
         void UpdateSize(
             Vec2 pos, Vec2 space, bool forceRedraw = false) override;
-        void HandleClick(Vec2 pos) override;
 
     protected:
         void Draw(Vec2 pos, Vec2 space) override;

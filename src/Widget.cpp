@@ -5,6 +5,8 @@
 #include <cmath>
 #include <codecvt>
 #include <cstddef>
+#include <cstring>
+#include <ctime>
 #include <curses.h>
 #include <functional>
 #include <iostream>
@@ -14,6 +16,22 @@
 #include <sstream>
 #include <unistd.h>
 #include <vector>
+
+std::vector<std::string> split(std::string target)
+{
+    size_t pieces = std::count(target.begin(), target.end(), ' ');
+
+    std::vector<std::string> res;
+    res.reserve(pieces + 1);
+
+    for (size_t i = 0; i < pieces + 1; i++)
+    {
+        res.emplace_back(target.substr(0, target.find(" ")));
+        target = target.substr(target.find(" ") + 1);
+    }
+
+    return res;
+}
 
 namespace OnePlayer
 {
@@ -53,6 +71,33 @@ namespace OnePlayer
     }
 
     Widget::~Widget() { }
+
+    void Widget::HandleClick(Vec2 pos)
+    {
+        if (pos.x.value > _lastSpace.x.value + _lastPos.x.value ||
+            pos.y.value > _lastSpace.y.value + _lastPos.y.value ||
+            pos.x.value < _lastPos.x.value || pos.y.value < _lastPos.y.value)
+            return;
+
+        if (ClickAction == "")
+            return;
+
+        std::vector<std::string> command = split(ClickAction);
+        char** commandArr = new char*[command.size() + 1];
+        for (size_t i = 0; i < command.size(); i++)
+        {
+            commandArr[i] = command[i].data();
+        }
+        commandArr[command.size()] = nullptr;
+
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            setlocale(LC_ALL, "");
+            execvp(command[0].c_str(), const_cast<char* const*>(commandArr));
+        }
+        delete[] commandArr;
+    }
 
     void Box::ReserveChildren(size_t size) { _children.reserve(size); }
 
@@ -206,11 +251,6 @@ namespace OnePlayer
         _content.shrink_to_fit();
     }
 
-    void Text::SetClickAction(const std::string& action)
-    {
-        _clickAction = action;
-    }
-
     void Text::UpdateVariables() { Draw(_lastPos, _lastSpace); }
 
     void Text::UpdateSize(Vec2 pos, Vec2 space, bool forceRedraw)
@@ -233,25 +273,6 @@ namespace OnePlayer
             box(_ncursesWin, 0, 0);
 
         Draw(pos, space);
-    }
-
-    void Text::HandleClick(Vec2 pos)
-    {
-        if (pos.x.value > _lastSpace.x.value + _lastPos.x.value ||
-            pos.y.value > _lastSpace.y.value + _lastPos.y.value ||
-            pos.x.value < _lastPos.x.value || pos.y.value < _lastPos.y.value)
-            return;
-
-        if (_clickAction == "")
-            return;
-
-        pid_t pid = fork();
-        if (pid == 0)
-        {
-            execlp(_clickAction.substr(0, _clickAction.find(" ")).data(),
-                _clickAction.data());
-            exit(0);
-        }
     }
 
     void Text::Draw(Vec2 pos, Vec2 space, bool forceClear, Vec2 offset)
@@ -361,7 +382,8 @@ namespace OnePlayer
         {
         case (Scale::Type::Horizontal):
         {
-            _content = std::vector<std::string>(1);
+            _content = std::vector<std::string>();
+            _content.reserve(1);
             std::stringstream stream;
             for (size_t i = 0; i < space.x.value - HasBorder * 2; i++)
             {
@@ -505,8 +527,6 @@ namespace OnePlayer
         Draw(pos, space);
     }
 
-    void Image::HandleClick(Vec2 pos) { (void)pos; }
-
     void Image::Draw(Vec2 pos, Vec2 space)
     {
         if (HasBorder)
@@ -534,7 +554,7 @@ namespace OnePlayer
                 pos.x.value += (space.x.value - space.y.value * 2) / 2;
                 break;
             case Image::ContentAlign::End:
-                pos.x.value += space.x.value - space.y.value * 2;
+                pos.x.value += space.x.value - space.y.value * 2 - 1;
                 break;
             }
         else
