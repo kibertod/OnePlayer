@@ -154,6 +154,40 @@ namespace OnePlayer
 
         size_t offset = 0;
 
+        size_t expandedChildrenCount = 0;
+        size_t totalExplicitSize = 0;
+
+        for (auto& child : _children)
+        {
+            switch (Orientation)
+            {
+            case Box::Orientation::Vertical:
+                if (child->Size.y.value == 0)
+                    expandedChildrenCount++;
+                else
+                {
+                    if (child->Size.y.unit == Unit::Pixel)
+                        totalExplicitSize += child->Size.y.value;
+                    else
+                        totalExplicitSize +=
+                            space.y.value * child->Size.y.value / 100;
+                }
+                break;
+            case Box::Orientation::Horizontal:
+                if (child->Size.x.value == 0)
+                    expandedChildrenCount++;
+                else
+                {
+                    if (child->Size.x.unit == Unit::Pixel)
+                        totalExplicitSize += child->Size.x.value;
+                    else
+                        totalExplicitSize +=
+                            space.x.value * child->Size.x.value / 100;
+                }
+                break;
+            }
+        }
+
         for (auto& child : _children)
         {
             Vec2 childPos = pos;
@@ -187,8 +221,29 @@ namespace OnePlayer
                     break;
                 }
 
-                childSpace.y.value =
-                    std::min(childSpace.y.value, space.y.value - offset);
+                switch (AlterAlignment)
+                {
+                case Widget::ContentAlign::Start:
+                    break;
+                case Widget::ContentAlign::Center:
+                    childPos.x.value +=
+                        (space.x.value - childSpace.x.value) / 2;
+                    break;
+                case Widget::ContentAlign::End:
+                    childPos.x.value += space.x.value - childSpace.x.value;
+                }
+
+                if (space.y.value > totalExplicitSize &&
+                    child->Size.y.value == 0)
+                {
+                    childSpace.y.value = (space.y.value - totalExplicitSize) /
+                                         expandedChildrenCount;
+                }
+                else
+                {
+                    childSpace.y.value =
+                        std::min(childSpace.y.value, space.y.value - offset);
+                }
                 childPos.y.value += offset;
                 offset += childSpace.y.value;
                 break;
@@ -219,8 +274,29 @@ namespace OnePlayer
                     break;
                 }
 
-                childSpace.x.value =
-                    std::min(childSpace.x.value, space.x.value - offset);
+                switch (AlterAlignment)
+                {
+                case Widget::ContentAlign::Start:
+                    break;
+                case Widget::ContentAlign::Center:
+                    childPos.y.value +=
+                        (space.y.value - childSpace.y.value) / 2;
+                    break;
+                case Widget::ContentAlign::End:
+                    childPos.y.value += space.y.value - childSpace.y.value;
+                }
+
+                if (space.x.value > totalExplicitSize &&
+                    child->Size.x.value == 0)
+                {
+                    childSpace.x.value = (space.x.value - totalExplicitSize) /
+                                         expandedChildrenCount;
+                }
+                else
+                {
+                    childSpace.x.value =
+                        std::min(childSpace.x.value, space.x.value - offset);
+                }
                 childPos.x.value += offset;
                 offset += childSpace.x.value;
                 break;
@@ -297,16 +373,16 @@ namespace OnePlayer
 
         switch (YAlign)
         {
-        case (Text::ContentAlign::Start):
+        case (Widget::ContentAlign::Start):
             yOffset += StartPadding.y.value;
             break;
-        case (Text::ContentAlign::Center):
+        case (Widget::ContentAlign::Center):
             yOffset +=
                 (space.y.value - StartPadding.y.value - EndPadding.y.value) /
                     2 -
                 _content.size() / 2;
             break;
-        case (Text::ContentAlign::End):
+        case (Widget::ContentAlign::End):
             yOffset += space.y.value - EndPadding.y.value - _content.size();
         }
 
@@ -336,16 +412,16 @@ namespace OnePlayer
 
             switch (XAlign)
             {
-            case (Text::ContentAlign::Start):
+            case (Widget::ContentAlign::Start):
                 xOffset += StartPadding.x.value;
                 break;
-            case (Text::ContentAlign::Center):
+            case (Widget::ContentAlign::Center):
                 xOffset += (space.x.value - StartPadding.x.value -
                                EndPadding.x.value) /
                                2 -
                            m_cvt.from_bytes(line).length() / 2;
                 break;
-            case (Text::ContentAlign::End):
+            case (Widget::ContentAlign::End):
                 xOffset += space.x.value - EndPadding.x.value -
                            m_cvt.from_bytes(line).length();
                 break;
@@ -488,6 +564,33 @@ namespace OnePlayer
             break;
         }
         }
+    }
+
+    void Scale::HandleClick(Vec2 pos)
+    {
+        if (pos.x.value > _lastSpace.x.value + _lastPos.x.value ||
+            pos.y.value > _lastSpace.y.value + _lastPos.y.value ||
+            pos.x.value < _lastPos.x.value || pos.y.value < _lastPos.y.value)
+            return;
+
+        if (ClickAction == "")
+            return;
+
+        float posOnScale = static_cast<float>(pos.x.value - _lastPos.x.value) /
+                           _lastSpace.x.value;
+
+        std::string clickActionBuffer = ClickAction;
+
+        if (ClickAction.find("{.}") != ClickAction.npos)
+            ClickAction.replace(
+                ClickAction.find("{.}"), 3, std::to_string(posOnScale * 100));
+        if (ClickAction.find("{%}") != ClickAction.npos)
+            ClickAction.replace(
+                ClickAction.find("{%}"), 3, std::to_string(posOnScale * 100));
+
+        Widget::HandleClick(pos);
+
+        ClickAction = clickActionBuffer;
     }
 
     void Image::UpdateVariables()

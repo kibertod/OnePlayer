@@ -28,8 +28,8 @@ int main(int argc, char** argv)
     box.Orientation = Box::Orientation::Vertical;
 
     std::shared_ptr<Box> hBox =
-        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 5), Vec2(0, 0),
-            Vec2(0, 0), false, true, variableManager);
+        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), { 50, Unit::Percent }),
+            Vec2(0, 0), Vec2(0, 0), false, true, variableManager);
 
     std::shared_ptr<Text> title = hBox->AddChild<Text>(
         Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
@@ -38,37 +38,41 @@ int main(int argc, char** argv)
         "Artist:  ${artist}\n"
         "Album:   ${album}\n"
         "Котёнок: ${polycat} =D");
-    title->XAlign = Text::ContentAlign::Start;
-    title->YAlign = Text::ContentAlign::Start;
+    title->XAlign = Widget::ContentAlign::Start;
+    title->YAlign = Widget::ContentAlign::Start;
 
     std::shared_ptr<Image> cover =
-        hBox->AddChild<Image>(Vec2(10'000, 5), Vec2(0, 0), Vec2(0, 0), false,
-            true, variableManager, ueberzug, "cover");
+        hBox->AddChild<Image>(Vec2(0, { 100, Unit::Percent }), Vec2(0, 0),
+            Vec2(0, 0), false, true, variableManager, ueberzug, "cover");
     cover->XAlign = Image::ContentAlign::End;
     cover->YAlign = Image::ContentAlign::Start;
-    cover->ClickAction = "playerctl play-pause";
 
     std::shared_ptr<Box> vBox = box.AddChild<Box>(
-        Vec2(Size(100, Unit::Percent), Size(25, Unit::Percent)), Vec2(0, 0),
+        Vec2(Size(100, Unit::Percent), Size(0, Unit::Percent)), Vec2(0, 0),
         Vec2(0, 0), false, true, variableManager);
     vBox->Orientation = Box::Orientation::Vertical;
 
-    std::shared_ptr<Box> controls = vBox->AddChild<Box>(
-        Vec2(Size(100, Unit::Percent), Size(2, Unit::Pixel)), Vec2(0, 0),
-        Vec2(0, 0), false, true, variableManager);
+    std::shared_ptr<Box> controls =
+        vBox->AddChild<Box>(Vec2(Size(100, Unit::Percent), 0), Vec2(0, 0),
+            Vec2(0, 0), false, true, variableManager);
+    controls->AlterAlignment = Widget::ContentAlign::End;
     std::shared_ptr<Text> prev = controls->AddChild<Text>(
-        Vec2(2, 2), Vec2(0, 0), Vec2(0, 0), false, true, variableManager, "<");
-    prev->ClickAction = "playerctl previous";
-    std::shared_ptr<Text> playPause = controls->AddChild<Text>(Vec2(2, 2),
-        Vec2(0, 0), Vec2(0, 0), false, true, variableManager, "${play-pause}");
-    playPause->ClickAction = "playerctl play-pause";
+        Vec2(5, 3), Vec2(0, 0), Vec2(0, 0), true, true, variableManager, "<");
+    prev->ClickAction = "playerctl -p ncspot previous";
+    prev->XAlign = Widget::ContentAlign::Center;
+    std::shared_ptr<Text> playPause = controls->AddChild<Text>(Vec2(5, 3),
+        Vec2(0, 0), Vec2(0, 0), true, true, variableManager, "${play-pause}");
+    playPause->ClickAction = "playerctl -p ncspot play-pause";
+    playPause->XAlign = Widget::ContentAlign::Center;
     std::shared_ptr<Text> next = controls->AddChild<Text>(
-        Vec2(2, 2), Vec2(0, 0), Vec2(0, 0), false, true, variableManager, ">");
-    next->ClickAction = "playerctl next";
-    std::shared_ptr<Scale> album = controls->AddChild<Scale>(
-        Vec2(Size(80, Unit::Percent), Size(2, Unit::Pixel)), Vec2(0, 0),
-        Vec2(0, 0), false, true, variableManager, "", "position");
-    album->Type = Scale::Type::Horizontal;
+        Vec2(5, 3), Vec2(0, 0), Vec2(0, 0), true, true, variableManager, ">");
+    next->ClickAction = "playerctl -p ncspot next";
+    next->XAlign = Widget::ContentAlign::Center;
+    std::shared_ptr<Scale> timeline = controls->AddChild<Scale>(Vec2(0, 2),
+        Vec2(0, 0), Vec2(0, 0), false, true, variableManager, "", "position");
+    timeline->Type = Scale::Type::Horizontal;
+    timeline->ClickAction =
+        "python /home/kibertod/.config/eww/scripts/mediaplayer.py set_time {%}";
 
     variableManager.AddVariable("title", "playerctl -p ncspot metadata title",
         Variable::Type::Poll, 0.5);

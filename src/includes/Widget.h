@@ -42,6 +42,13 @@ namespace OnePlayer
     class Widget
     {
     public:
+        enum class ContentAlign
+        {
+            Start,
+            Center,
+            End
+        };
+
         bool Visible;
         bool HasBorder;
         Vec2 Size;
@@ -77,6 +84,7 @@ namespace OnePlayer
         };
 
         Orientation Orientation;
+        ContentAlign AlterAlignment;
 
         template<class T, class... Args>
         std::shared_ptr<T> AddChild(Args&&... args)
@@ -90,7 +98,8 @@ namespace OnePlayer
             bool visible, VariableManager& variableManager) :
             Widget(size, startPadding, endPadding, hasBorder, visible,
                 variableManager),
-            Orientation(Orientation::Horizontal) {};
+            Orientation(Orientation::Horizontal),
+            AlterAlignment(ContentAlign::Start) {};
 
         void ReserveChildren(size_t size);
         void UpdateVariables() override;
@@ -106,13 +115,6 @@ namespace OnePlayer
     class Text : public Widget
     {
     public:
-        enum class ContentAlign
-        {
-            Start,
-            Center,
-            End
-        };
-
         ContentAlign XAlign;
         ContentAlign YAlign;
 
@@ -157,7 +159,7 @@ namespace OnePlayer
             Type(Type::Horizontal),
             ValueVar(valueVar) {};
 
-        void HandleClick(Vec2 pos) override { (void)pos; };
+        void HandleClick(Vec2 pos) override;
 
     protected:
         void Draw(Vec2 pos, Vec2 space) override;
