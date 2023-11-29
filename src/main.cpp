@@ -28,8 +28,8 @@ int main(int argc, char** argv)
     box.Orientation = Box::Orientation::Vertical;
 
     std::shared_ptr<Box> hBox =
-        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), { 50, Unit::Percent }),
-            Vec2(0, 0), Vec2(0, 0), false, true, variableManager);
+        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 0), Vec2(0, 0),
+            Vec2(0, 0), false, true, variableManager);
 
     std::shared_ptr<Text> title = hBox->AddChild<Text>(
         Vec2(Size(50, Unit::Percent), Size(100, Unit::Percent)), Vec2(0, 0),
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         "Title:   ${title}\n"
         "Artist:  ${artist}\n"
         "Album:   ${album}\n"
-        "Котёнок: ${polycat} =D");
+        "Котёнок: ${polycat} xD");
     title->XAlign = Widget::ContentAlign::Start;
     title->YAlign = Widget::ContentAlign::Start;
 
@@ -47,13 +47,8 @@ int main(int argc, char** argv)
     cover->XAlign = Image::ContentAlign::End;
     cover->YAlign = Image::ContentAlign::Start;
 
-    std::shared_ptr<Box> vBox = box.AddChild<Box>(
-        Vec2(Size(100, Unit::Percent), Size(0, Unit::Percent)), Vec2(0, 0),
-        Vec2(0, 0), false, true, variableManager);
-    vBox->Orientation = Box::Orientation::Vertical;
-
     std::shared_ptr<Box> controls =
-        vBox->AddChild<Box>(Vec2(Size(100, Unit::Percent), 0), Vec2(0, 0),
+        box.AddChild<Box>(Vec2(Size(100, Unit::Percent), 3), Vec2(0, 0),
             Vec2(0, 0), false, true, variableManager);
     controls->AlterAlignment = Widget::ContentAlign::End;
     std::shared_ptr<Text> prev = controls->AddChild<Text>(

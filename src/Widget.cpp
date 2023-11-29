@@ -244,6 +244,10 @@ namespace OnePlayer
                     childSpace.y.value =
                         std::min(childSpace.y.value, space.y.value - offset);
                 }
+
+                if (child->Size.x.value == 0)
+                    childSpace.x.value = space.x.value;
+
                 childPos.y.value += offset;
                 offset += childSpace.y.value;
                 break;
@@ -297,6 +301,10 @@ namespace OnePlayer
                     childSpace.x.value =
                         std::min(childSpace.x.value, space.x.value - offset);
                 }
+
+                if (child->Size.y.value == 0)
+                    childSpace.y.value = space.y.value;
+
                 childPos.x.value += offset;
                 offset += childSpace.x.value;
                 break;
